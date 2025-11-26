@@ -13,8 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Container from "./Container";
+import { useCart } from "@/context/CartContext";
+import CartSidebar from "@/components/cart/CartSidebar";
 import { 
   Menu, 
   ShoppingCart, 
@@ -27,7 +30,9 @@ import {
   Camera,
   Monitor,
   Cpu,
-  ChevronDown
+  ChevronDown,
+  Package,
+  Heart
 } from "lucide-react";
 
 const navLinks = [
@@ -49,7 +54,9 @@ const navLinks = [
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const { cartCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
 
   const getInitials = (name) => {
     if (!name) return "U";
@@ -102,13 +109,23 @@ export default function Navbar() {
 
           {/* Right Side - Auth & Cart */}
           <div className="flex items-center gap-2">
-            {/* Cart Button (placeholder for future) */}
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                0
-              </span>
-            </Button>
+            {/* Cart Button with Sidebar */}
+            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-[10px] flex items-center justify-center"
+                    >
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <CartSidebar onClose={() => setCartOpen(false)} />
+            </Sheet>
 
             {/* Auth Section */}
             {status === "loading" ? (
@@ -141,6 +158,19 @@ export default function Navbar() {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="flex items-center cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/wishlist" className="flex items-center cursor-pointer">
+                      <Heart className="mr-2 h-4 w-4" />
+                      Wishlist
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/add-product" className="flex items-center cursor-pointer">
                       <Plus className="mr-2 h-4 w-4" />

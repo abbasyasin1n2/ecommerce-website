@@ -25,9 +25,11 @@ import {
 import { Rating } from "@smastrom/react-rating";
 import "@smastrom/react-rating/style.css";
 import { toast } from "sonner";
+import { useCart } from "@/context/CartContext";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const { addToCart, isInCart, getItemQuantity } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,12 +56,31 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const handleAddToCart = () => {
-    toast.success(`${quantity} item(s) added to cart!`);
+    const productName = product.title || product.name;
+    const productImage = product.imageUrl || product.image || "/placeholder.svg";
+    const productCategory = product.subcategory || product.category;
+    
+    // Add to cart with selected quantity
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        _id: product._id,
+        name: productName,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: productImage,
+        category: productCategory,
+      });
+    }
+    
+    toast.success(`${quantity} ${productName} added to cart!`);
   };
 
   const handleAddToWishlist = () => {
     toast.success("Added to wishlist!");
   };
+
+  const productInCart = product ? isInCart(product._id) : false;
+  const cartQuantity = product ? getItemQuantity(product._id) : 0;
 
   if (loading) {
     return (
@@ -256,9 +277,23 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button size="lg" className="flex-1" onClick={handleAddToCart}>
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
+              <Button 
+                size="lg" 
+                className="flex-1" 
+                onClick={handleAddToCart}
+                variant={productInCart ? "secondary" : "default"}
+              >
+                {productInCart ? (
+                  <>
+                    <Check className="mr-2 h-5 w-5" />
+                    In Cart ({cartQuantity})
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Add to Cart
+                  </>
+                )}
               </Button>
               <Button
                 size="lg"

@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Check } from "lucide-react";
 import { Rating } from "@smastrom/react-rating";
 import "@smastrom/react-rating/style.css";
+import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 
 export default function ProductCard({ product, viewMode = "grid" }) {
+  const { addToCart, isInCart } = useCart();
+  
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
   const discountPercent = hasDiscount
     ? Math.round((1 - product.price / product.originalPrice) * 100)
@@ -20,6 +24,24 @@ export default function ProductCard({ product, viewMode = "grid" }) {
   const productImage = product.imageUrl || product.image || "/placeholder.svg";
   const productCategory = product.subcategory || product.category;
   const productDescription = product.shortDescription || product.description || "";
+
+  const inCart = isInCart(product._id);
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToCart({
+      _id: product._id,
+      name: productName,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: productImage,
+      category: productCategory,
+    });
+    
+    toast.success(`${productName} added to cart!`);
+  };
 
   if (viewMode === "list") {
     return (
@@ -82,9 +104,22 @@ export default function ProductCard({ product, viewMode = "grid" }) {
               <Button size="icon" variant="outline">
                 <Heart className="h-4 w-4" />
               </Button>
-              <Button size="sm">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
+              <Button 
+                size="sm" 
+                onClick={handleAddToCart}
+                variant={inCart ? "secondary" : "default"}
+              >
+                {inCart ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    In Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -155,9 +190,23 @@ export default function ProductCard({ product, viewMode = "grid" }) {
 
       {/* Footer */}
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full" size="sm">
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
+        <Button 
+          className="w-full" 
+          size="sm" 
+          onClick={handleAddToCart}
+          variant={inCart ? "secondary" : "default"}
+        >
+          {inCart ? (
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              In Cart
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Add to Cart
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

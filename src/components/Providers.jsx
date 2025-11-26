@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
+import { CartProvider } from '@/context/CartContext';
 
 export default function Providers({ children }) {
   const [queryClient] = useState(
@@ -19,7 +20,9 @@ export default function Providers({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        {children}
+        <CartProvider>
+          {children}
+        </CartProvider>
       </SessionProvider>
     </QueryClientProvider>
   );
