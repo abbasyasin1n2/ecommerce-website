@@ -199,10 +199,10 @@ export default function Navbar() {
             ) : (
               <div className="hidden sm:flex sm:items-center sm:gap-2">
                 <Button variant="ghost" asChild>
-                  <Link href="/login">Login</Link>
+                  <Link href="/login">Sign In</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/login">Get Started</Link>
+                  <Link href="/register">Sign Up</Link>
                 </Button>
               </div>
             )}
@@ -331,10 +331,10 @@ export default function Navbar() {
                     ) : (
                       <div className="flex flex-col gap-2">
                         <Button variant="outline" asChild onClick={() => setMobileMenuOpen(false)}>
-                          <Link href="/login">Login</Link>
+                          <Link href="/login">Sign In</Link>
                         </Button>
                         <Button asChild onClick={() => setMobileMenuOpen(false)}>
-                          <Link href="/login">Get Started</Link>
+                          <Link href="/register">Sign Up</Link>
                         </Button>
                       </div>
                     )}

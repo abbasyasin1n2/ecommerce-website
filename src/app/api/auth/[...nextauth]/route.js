@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
 
 const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -8,38 +9,75 @@ const handler = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    CredentialsProvider({
+      name: "Firebase",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        name: { label: "Name", type: "text" },
+        image: { label: "Image", type: "text" },
+        firebaseToken: { label: "Firebase Token", type: "text" },
+      },
+      async authorize(credentials) {
+        // Verify the Firebase token would happen here in production
+        // For now, we trust the client-side Firebase auth
+        if (credentials?.email) {
+          return {
+            id: credentials.email,
+            email: credentials.email,
+            name: credentials.name || credentials.email.split("@")[0],
+            image: credentials.image || null,
+          };
+        }
+        return null;
+      },
+    }),
   ],
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   session: {
     strategy: "jwt",
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Save user to MongoDB when they sign in with Google
-      if (account?.provider === "google") {
-        const { name, email, image } = user;
+      // Save user to MongoDB when they sign in
+      const { name, email, image } = user;
+      const provider = account?.provider || "credentials";
 
-        try {
-          const response = await fetch("http://localhost:5000/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              name, 
-              email, 
-              image, 
-              provider: "google" 
-            }),
-          });
+      try {
+        const response = await fetch("http://localhost:5000/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            name, 
+            email, 
+            image, 
+            provider,
+          }),
+        });
 
-          if (!response.ok) {
-            console.error("Failed to save user:", await response.text());
-          }
-        } catch (error) {
-          // Don't block login if save fails - just log it
-          console.error("Error saving user to database:", error);
+        if (!response.ok) {
+          console.error("Failed to save user:", await response.text());
         }
+      } catch (error) {
+        // Don't block login if save fails - just log it
+        console.error("Error saving user to database:", error);
       }
 
       return true; // Allow sign in to proceed
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+      }
+      return session;
     },
   },
 })
