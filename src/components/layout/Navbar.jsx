@@ -45,9 +45,9 @@ const navLinks = [
     href: "/products",
     dropdown: [
       { name: "Headphones", href: "/products?subcategory=Headphones", icon: Headphones },
-      { name: "Cameras", href: "/products?subcategory=Camera & Photo", icon: Camera },
+      { name: "Cameras", href: "/products?subcategory=Camera%20%26%20Photo", icon: Camera },
       { name: "Monitors", href: "/products?subcategory=Monitors", icon: Monitor },
-      { name: "Computer Parts", href: "/products?subcategory=Computer Accessories & Peripherals", icon: Cpu },
+      { name: "Computer Parts", href: "/products?subcategory=Computer%20Accessories%20%26%20Peripherals", icon: Cpu },
       { name: "GPUs", href: "/products?subcategory=GPU", icon: Zap },
     ]
   },

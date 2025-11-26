@@ -17,9 +17,9 @@ const footerLinks = {
     links: [
       { name: "All Products", href: "/products" },
       { name: "Headphones", href: "/products?subcategory=Headphones" },
-      { name: "Cameras", href: "/products?subcategory=Camera & Photo" },
+      { name: "Cameras", href: "/products?subcategory=Camera%20%26%20Photo" },
       { name: "Monitors", href: "/products?subcategory=Monitors" },
-      { name: "Computer Parts", href: "/products?subcategory=Computer Accessories & Peripherals" },
+      { name: "Computer Parts", href: "/products?subcategory=Computer%20Accessories%20%26%20Peripherals" },
       { name: "GPUs", href: "/products?subcategory=GPU" },
     ]
   },
