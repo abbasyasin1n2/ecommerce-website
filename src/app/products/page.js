@@ -47,6 +47,8 @@ export default function ProductsPage() {
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
   const brand = searchParams.get("brand") || "";
+  const minRating = searchParams.get("minRating") || "";
+  const inStock = searchParams.get("inStock") || "";
 
   const [searchInput, setSearchInput] = useState(search);
   const [viewMode, setViewMode] = useState("grid");
@@ -111,6 +113,17 @@ export default function ProductsPage() {
           );
         }
 
+        // Client-side filtering for minimum rating
+        if (minRating) {
+          const minRatingNum = parseFloat(minRating);
+          productList = productList.filter((p) => (p.rating || 0) >= minRatingNum);
+        }
+
+        // Client-side filtering for in-stock items
+        if (inStock === "true") {
+          productList = productList.filter((p) => p.inStock !== false && p.stock !== 0);
+        }
+
         // Client-side sorting
         if (sort === "price-low") {
           productList.sort((a, b) => a.price - b.price);
@@ -138,7 +151,7 @@ export default function ProductsPage() {
     }
 
     fetchProducts();
-  }, [category, subcategory, search, sort, page, minPrice, maxPrice, brand]);
+  }, [category, subcategory, search, sort, page, minPrice, maxPrice, brand, minRating, inStock]);
 
   // Handle search submit
   const handleSearch = (e) => {
@@ -152,7 +165,7 @@ export default function ProductsPage() {
     router.push("/products");
   };
 
-  const hasActiveFilters = category || subcategory || search || minPrice || maxPrice || brand;
+  const hasActiveFilters = category || subcategory || search || minPrice || maxPrice || brand || minRating || inStock;
 
   // Get price range label
   const getPriceRangeLabel = () => {
@@ -251,6 +264,8 @@ export default function ProductsPage() {
                     minPrice={minPrice}
                     maxPrice={maxPrice}
                     brand={brand}
+                    minRating={minRating}
+                    inStock={inStock}
                     onFilterChange={updateFilters}
                   />
                 </div>
@@ -316,6 +331,26 @@ export default function ProductsPage() {
                 <X className="ml-1 h-3 w-3" />
               </Button>
             )}
+            {minRating && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => updateFilters({ minRating: "" })}
+              >
+                {minRating}★ & up
+                <X className="ml-1 h-3 w-3" />
+              </Button>
+            )}
+            {inStock && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => updateFilters({ inStock: "" })}
+              >
+                In Stock
+                <X className="ml-1 h-3 w-3" />
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear all
             </Button>
@@ -332,6 +367,8 @@ export default function ProductsPage() {
               minPrice={minPrice}
               maxPrice={maxPrice}
               brand={brand}
+              minRating={minRating}
+              inStock={inStock}
               onFilterChange={updateFilters}
             />
           </aside>
