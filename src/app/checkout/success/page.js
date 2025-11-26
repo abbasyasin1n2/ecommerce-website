@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Container from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,10 +9,10 @@ import Link from "next/link";
 import { CheckCircle, Package, Truck, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function CheckoutSuccessPage() {
-  // In a real app, orderId would come from the order creation API response
-  // For demo purposes, we use a placeholder
-  const orderId = "EH12345678";
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const displayOrderId = orderId ? orderId.slice(-8).toUpperCase() : "PENDING";
 
   return (
     <div className="py-16 md:py-24 bg-muted/30 min-h-[80vh]">
@@ -49,7 +51,7 @@ export default function CheckoutSuccessPage() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-center sm:text-left">
                     <p className="text-sm text-muted-foreground">Order ID</p>
-                    <p className="text-xl font-bold text-primary">{orderId}</p>
+                    <p className="text-xl font-bold text-primary">#{displayOrderId}</p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Package className="h-4 w-4" />
@@ -113,11 +115,23 @@ export default function CheckoutSuccessPage() {
               <Link href="/products">Continue Shopping</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/orders">View Orders</Link>
+              <Link href="/dashboard">View Orders</Link>
             </Button>
           </motion.div>
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="py-16 md:py-24 bg-muted/30 min-h-[80vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

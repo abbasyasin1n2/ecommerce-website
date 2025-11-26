@@ -92,26 +92,50 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // Simulate order processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Create order object (would normally send to backend)
-      const order = {
-        items: cart,
-        shippingAddress: formData,
+      // Create order in backend
+      const orderData = {
+        userEmail: session?.user?.email || formData.email,
+        items: cart.map(item => ({
+          productId: item._id,
+          title: item.title || item.name,
+          price: item.price,
+          quantity: item.quantity,
+          imageUrl: item.imageUrl || item.image
+        })),
+        shippingAddress: {
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          district: formData.division,
+          postalCode: formData.postalCode
+        },
         paymentMethod,
         subtotal: cartTotal,
         shipping: shippingCost,
-        total: finalTotal,
-        createdAt: new Date().toISOString(),
+        total: finalTotal
       };
 
-      console.log("Order placed:", order);
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      });
 
-      // Clear cart and redirect to success page
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const result = await response.json();
+
+      // Clear cart and redirect to success page with order ID
       clearCart();
-      router.push("/checkout/success");
+      router.push(`/checkout/success?orderId=${result.orderId}`);
     } catch (error) {
+      console.error('Order error:', error);
       toast.error("Failed to place order. Please try again.");
     } finally {
       setIsProcessing(false);

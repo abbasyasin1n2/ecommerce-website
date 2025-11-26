@@ -162,7 +162,7 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/orders" className="flex items-center cursor-pointer">
+                    <Link href="/dashboard" className="flex items-center cursor-pointer">
                       <Package className="mr-2 h-4 w-4" />
                       Orders
                     </Link>
