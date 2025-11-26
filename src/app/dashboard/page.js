@@ -44,13 +44,15 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     async function fetchOrders() {
       if (!session?.user?.email) return;
       
       try {
         const response = await fetch(
-          `http://localhost:5000/api/orders/user/${encodeURIComponent(session.user.email)}`
+          `${API_URL}/api/orders/user/${encodeURIComponent(session.user.email)}`
         );
         if (response.ok) {
           const data = await response.json();

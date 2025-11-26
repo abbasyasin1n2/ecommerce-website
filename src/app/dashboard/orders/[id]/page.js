@@ -43,8 +43,9 @@ export default function OrderDetailsPage() {
     async function fetchOrder() {
       if (!params.id) return;
       
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       try {
-        const response = await fetch(`http://localhost:5000/api/orders/${params.id}`);
+        const response = await fetch(`${API_URL}/api/orders/${params.id}`);
         if (response.ok) {
           const data = await response.json();
           setOrder(data);
@@ -363,8 +364,9 @@ export default function OrderDetailsPage() {
                 variant="destructive"
                 onClick={async () => {
                   if (!confirm('Are you sure you want to cancel this order?')) return;
+                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
                   try {
-                    const response = await fetch(`http://localhost:5000/api/orders/${order._id}`, {
+                    const response = await fetch(`${API_URL}/api/orders/${order._id}`, {
                       method: 'DELETE'
                     });
                     if (response.ok) {

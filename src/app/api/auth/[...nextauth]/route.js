@@ -44,9 +44,10 @@ const handler = NextAuth({
       // Save user to MongoDB when they sign in
       const { name, email, image } = user;
       const provider = account?.provider || "credentials";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
       try {
-        const response = await fetch("http://localhost:5000/api/users", {
+        const response = await fetch(`${API_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
