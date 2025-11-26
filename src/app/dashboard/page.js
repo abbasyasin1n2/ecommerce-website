@@ -21,7 +21,9 @@ import {
   Clock,
   CheckCircle2,
   Truck,
-  XCircle
+  XCircle,
+  Plus,
+  LayoutList
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -154,6 +156,62 @@ export default function DashboardPage() {
             Continue Shopping
           </Link>
         </Button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/dashboard/add-product">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Plus className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium">Add Product</p>
+                <p className="text-xs text-muted-foreground">Create new listing</p>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/dashboard/manage-products">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <LayoutList className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="font-medium">Manage Products</p>
+                <p className="text-xs text-muted-foreground">View & edit</p>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/orders">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Package className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium">My Orders</p>
+                <p className="text-xs text-muted-foreground">Track orders</p>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/wishlist">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-pink-100 rounded-lg">
+                <ShoppingBag className="h-5 w-5 text-pink-600" />
+              </div>
+              <div>
+                <p className="font-medium">Wishlist</p>
+                <p className="text-xs text-muted-foreground">Saved items</p>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
       </div>
 
       {/* Stats Cards */}

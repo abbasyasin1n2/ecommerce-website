@@ -33,7 +33,8 @@ import {
   Cpu,
   ChevronDown,
   Package,
-  Heart
+  Heart,
+  LayoutList
 } from "lucide-react";
 
 const navLinks = [
@@ -107,6 +108,24 @@ export default function Navbar() {
                 </Button>
               )
             ))}
+            
+            {/* Add Product & My Products - Only visible when logged in */}
+            {session && (
+              <>
+                <Button variant="ghost" asChild className="text-primary">
+                  <Link href="/dashboard/add-product" className="flex items-center gap-1">
+                    <Plus className="h-4 w-4" />
+                    Add Product
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild className="text-primary">
+                  <Link href="/dashboard/manage-products" className="flex items-center gap-1">
+                    <LayoutList className="h-4 w-4" />
+                    My Products
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Right Side - Auth & Cart */}
