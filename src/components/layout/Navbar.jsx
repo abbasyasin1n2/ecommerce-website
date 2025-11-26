@@ -51,7 +51,6 @@ const navLinks = [
       { name: "GPUs", href: "/products?subcategory=GPU", icon: Zap },
     ]
   },
-  { name: "About", href: "/about" },
 ];
 
 export default function Navbar() {
