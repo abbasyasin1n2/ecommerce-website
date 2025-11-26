@@ -71,8 +71,8 @@ export default function CartPage() {
                       className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted shrink-0"
                     >
                       <Image
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
+                        src={item.imageUrl || item.image || "/placeholder.svg"}
+                        alt={item.title || item.name || "Product image"}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 96px, 128px"
@@ -85,12 +85,12 @@ export default function CartPage() {
                         <div>
                           <Link href={`/products/${item._id}`}>
                             <h3 className="font-semibold hover:text-primary transition-colors line-clamp-2">
-                              {item.name}
+                              {item.title || item.name}
                             </h3>
                           </Link>
-                          {item.category && (
+                          {item.brand && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {item.category}
+                              {item.brand}
                             </p>
                           )}
                         </div>

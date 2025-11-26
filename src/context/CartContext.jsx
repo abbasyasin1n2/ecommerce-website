@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 const CartContext = createContext(undefined);
@@ -26,82 +26,108 @@ function saveCart(cart) {
   }
 }
 
-export function CartProvider({ children }) {
-  // Initialize with stored cart (safe for SSR - returns [] on server)
-  const [cart, setCartState] = useState(getStoredCart);
-  const isInitialized = useRef(false);
+// Create a simple store for cart that works with useSyncExternalStore
+let cartListeners = [];
+let cartSnapshot = [];
 
-  // Custom setter that also saves to localStorage
+// Cached empty array for server snapshot to avoid infinite loop
+const EMPTY_CART = [];
+
+function subscribeToCart(callback) {
+  cartListeners.push(callback);
+  return () => {
+    cartListeners = cartListeners.filter(l => l !== callback);
+  };
+}
+
+function getCartSnapshot() {
+  return cartSnapshot;
+}
+
+function getServerSnapshot() {
+  return EMPTY_CART;
+}
+
+function updateCartSnapshot(newCart) {
+  cartSnapshot = newCart;
+  saveCart(newCart);
+  cartListeners.forEach(listener => listener());
+}
+
+// Initialize cart on client side
+if (typeof window !== "undefined") {
+  cartSnapshot = getStoredCart();
+}
+
+export function CartProvider({ children }) {
+  // Use useSyncExternalStore for hydration-safe cart state
+  const cart = useSyncExternalStore(subscribeToCart, getCartSnapshot, getServerSnapshot);
+
+  // Helper to update cart
   const setCart = useCallback((updater) => {
-    setCartState((prev) => {
-      const newCart = typeof updater === "function" ? updater(prev) : updater;
-      saveCart(newCart);
-      return newCart;
-    });
-  }, []);
+    const newCart = typeof updater === "function" ? updater(cart) : updater;
+    updateCartSnapshot(newCart);
+  }, [cart]);
 
   // Add item to cart
-  const addToCart = (product, quantity = 1) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item._id === product._id);
+  const addToCart = useCallback((product, quantity = 1) => {
+    const existingItem = cart.find((item) => item._id === product._id);
 
-      if (existingItem) {
-        // Update quantity if item exists
-        const newCart = prevCart.map((item) =>
-          item._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-        toast.success(`Updated quantity in cart`);
-        return newCart;
-      } else {
-        // Add new item
-        toast.success(`${product.title || product.name} added to cart`);
-        return [
-          ...prevCart,
-          {
-            _id: product._id,
-            title: product.title || product.name,
-            price: product.price,
-            imageUrl: product.imageUrl || product.image,
-            brand: product.brand,
-            quantity,
-          },
-        ];
-      }
-    });
-  };
+    if (existingItem) {
+      // Update quantity if item exists
+      const newCart = cart.map((item) =>
+        item._id === product._id
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      );
+      updateCartSnapshot(newCart);
+      toast.success(`Updated quantity in cart`);
+    } else {
+      // Add new item
+      const newCart = [
+        ...cart,
+        {
+          _id: product._id,
+          title: product.title || product.name,
+          price: product.price,
+          imageUrl: product.imageUrl || product.image,
+          brand: product.brand,
+          quantity,
+        },
+      ];
+      updateCartSnapshot(newCart);
+      toast.success(`${product.title || product.name} added to cart`);
+    }
+  }, [cart]);
 
   // Remove item from cart
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => {
-      const item = prevCart.find((i) => i._id === productId);
-      if (item) {
-        toast.success(`${item.title} removed from cart`);
-      }
-      return prevCart.filter((item) => item._id !== productId);
-    });
-  };
+  const removeFromCart = useCallback((productId) => {
+    const item = cart.find((i) => i._id === productId);
+    if (item) {
+      toast.success(`${item.title} removed from cart`);
+    }
+    const newCart = cart.filter((item) => item._id !== productId);
+    updateCartSnapshot(newCart);
+  }, [cart]);
 
   // Update item quantity
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = useCallback((productId, quantity) => {
     if (quantity < 1) {
       removeFromCart(productId);
       return;
     }
 
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item._id === productId ? { ...item, quantity } : item
-      )
+    const newCart = cart.map((item) =>
+      item._id === productId ? { ...item, quantity } : item
     );
-  };
+    updateCartSnapshot(newCart);
+  }, [cart, removeFromCart]);
 
   // Clear entire cart
-  const clearCart = () => {
-    setCart([]);
+  const clearCart = useCallback(() => {
+    updateCartSnapshot([]);
     toast.success("Cart cleared");
-  };
+  }, []);
 
   // Calculate totals
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
@@ -111,15 +137,15 @@ export function CartProvider({ children }) {
   );
 
   // Check if item is in cart
-  const isInCart = (productId) => {
+  const isInCart = useCallback((productId) => {
     return cart.some((item) => item._id === productId);
-  };
+  }, [cart]);
 
   // Get item quantity in cart
-  const getItemQuantity = (productId) => {
+  const getItemQuantity = useCallback((productId) => {
     const item = cart.find((i) => i._id === productId);
     return item ? item.quantity : 0;
-  };
+  }, [cart]);
 
   return (
     <CartContext.Provider

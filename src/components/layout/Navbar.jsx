@@ -118,8 +118,11 @@ export default function Navbar() {
                     <Badge 
                       variant="destructive" 
                       className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-[10px] flex items-center justify-center"
+                      suppressHydrationWarning
                     >
-                      {cartCount > 99 ? '99+' : cartCount}
+                      <span suppressHydrationWarning>
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </span>
                     </Badge>
                   )}
                 </Button>

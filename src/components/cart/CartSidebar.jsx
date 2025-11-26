@@ -52,8 +52,8 @@ export default function CartSidebar({ onClose }) {
                   className="relative w-20 h-20 rounded-md overflow-hidden bg-muted shrink-0"
                 >
                   <Image
-                    src={item.image || "/placeholder.svg"}
-                    alt={item.name}
+                    src={item.imageUrl || item.image || "/placeholder.svg"}
+                    alt={item.title || item.name || "Product image"}
                     fill
                     className="object-cover"
                     sizes="80px"
@@ -64,12 +64,12 @@ export default function CartSidebar({ onClose }) {
                 <div className="flex-1 min-w-0">
                   <Link href={`/products/${item._id}`} onClick={onClose}>
                     <h4 className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors">
-                      {item.name}
+                      {item.title || item.name}
                     </h4>
                   </Link>
-                  {item.category && (
+                  {item.brand && (
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {item.category}
+                      {item.brand}
                     </p>
                   )}
                   <p className="font-semibold text-primary mt-1">
