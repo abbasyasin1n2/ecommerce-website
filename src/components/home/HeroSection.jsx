@@ -67,7 +67,7 @@ export default function HeroSection() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="px-8 text-lg" asChild>
-                <Link href="/products?category=Phones">
+                <Link href="/products?subcategory=GPU">
                   View Deals
                 </Link>
               </Button>
