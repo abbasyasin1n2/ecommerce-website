@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Container from "./Container";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { 
   Menu, 
@@ -55,6 +56,7 @@ const navLinks = [
 export default function Navbar() {
   const { data: session, status } = useSession();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -109,6 +111,24 @@ export default function Navbar() {
 
           {/* Right Side - Auth & Cart */}
           <div className="flex items-center gap-2">
+            {/* Wishlist Button */}
+            <Button variant="ghost" size="icon" className="relative" asChild>
+              <Link href="/wishlist">
+                <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-[10px] flex items-center justify-center bg-red-500 text-white"
+                    suppressHydrationWarning
+                  >
+                    <span suppressHydrationWarning>
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  </Badge>
+                )}
+              </Link>
+            </Button>
+
             {/* Cart Button with Sidebar */}
             <Sheet open={cartOpen} onOpenChange={setCartOpen}>
               <SheetTrigger asChild>

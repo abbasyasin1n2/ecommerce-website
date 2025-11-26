@@ -1,133 +1,161 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useSyncExternalStore } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 const CartContext = createContext(undefined);
 
-const CART_STORAGE_KEY = "electrohub_cart";
-
-// Helper to get cart from localStorage
-function getStoredCart() {
-  if (typeof window === "undefined") return [];
-  try {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-    return savedCart ? JSON.parse(savedCart) : [];
-  } catch (e) {
-    console.error("Error loading cart:", e);
-    return [];
-  }
-}
-
-// Helper to save cart to localStorage
-function saveCart(cart) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-  }
-}
-
-// Create a simple store for cart that works with useSyncExternalStore
-let cartListeners = [];
-let cartSnapshot = [];
-
-// Cached empty array for server snapshot to avoid infinite loop
-const EMPTY_CART = [];
-
-function subscribeToCart(callback) {
-  cartListeners.push(callback);
-  return () => {
-    cartListeners = cartListeners.filter(l => l !== callback);
-  };
-}
-
-function getCartSnapshot() {
-  return cartSnapshot;
-}
-
-function getServerSnapshot() {
-  return EMPTY_CART;
-}
-
-function updateCartSnapshot(newCart) {
-  cartSnapshot = newCart;
-  saveCart(newCart);
-  cartListeners.forEach(listener => listener());
-}
-
-// Initialize cart on client side
-if (typeof window !== "undefined") {
-  cartSnapshot = getStoredCart();
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export function CartProvider({ children }) {
-  // Use useSyncExternalStore for hydration-safe cart state
-  const cart = useSyncExternalStore(subscribeToCart, getCartSnapshot, getServerSnapshot);
+  const { data: session, status } = useSession();
+  const [cart, setCart] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const prevEmailRef = useRef(null);
 
-  // Helper to update cart
-  const setCart = useCallback((updater) => {
-    const newCart = typeof updater === "function" ? updater(cart) : updater;
-    updateCartSnapshot(newCart);
-  }, [cart]);
+  // Fetch cart from server when user logs in
+  useEffect(() => {
+    async function fetchCart() {
+      if (status === "loading") return;
+      
+      if (session?.user?.email) {
+        // User logged in - fetch their cart from database
+        if (prevEmailRef.current !== session.user.email) {
+          setIsLoading(true);
+          try {
+            const response = await fetch(
+              `${API_URL}/api/cart/${encodeURIComponent(session.user.email)}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              setCart(data.items || []);
+            }
+          } catch (error) {
+            console.error("Error fetching cart:", error);
+          } finally {
+            setIsLoading(false);
+          }
+          prevEmailRef.current = session.user.email;
+        }
+      } else {
+        // User logged out - clear cart
+        if (prevEmailRef.current !== null) {
+          setCart([]);
+          prevEmailRef.current = null;
+        }
+        setIsLoading(false);
+      }
+    }
+
+    fetchCart();
+  }, [session?.user?.email, status]);
+
+  // Sync cart to server whenever it changes (debounced)
+  const syncCartToServer = useCallback(async (newCart) => {
+    if (!session?.user?.email) return;
+    
+    try {
+      await fetch(`${API_URL}/api/cart/${encodeURIComponent(session.user.email)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: newCart }),
+      });
+    } catch (error) {
+      console.error("Error syncing cart:", error);
+    }
+  }, [session?.user?.email]);
 
   // Add item to cart
-  const addToCart = useCallback((product, quantity = 1) => {
-    const existingItem = cart.find((item) => item._id === product._id);
-
-    if (existingItem) {
-      // Update quantity if item exists
-      const newCart = cart.map((item) =>
-        item._id === product._id
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      );
-      updateCartSnapshot(newCart);
-      toast.success(`Updated quantity in cart`);
-    } else {
-      // Add new item
-      const newCart = [
-        ...cart,
-        {
-          _id: product._id,
-          title: product.title || product.name,
-          price: product.price,
-          imageUrl: product.imageUrl || product.image,
-          brand: product.brand,
-          quantity,
-        },
-      ];
-      updateCartSnapshot(newCart);
-      toast.success(`${product.title || product.name} added to cart`);
+  const addToCart = useCallback(async (product, quantity = 1) => {
+    if (!session?.user?.email) {
+      toast.error("Please sign in to add items to cart");
+      return;
     }
-  }, [cart]);
+
+    setCart((currentCart) => {
+      const existingItem = currentCart.find((item) => item._id === product._id);
+      let newCart;
+
+      if (existingItem) {
+        newCart = currentCart.map((item) =>
+          item._id === product._id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+        toast.success(`Updated quantity in cart`);
+      } else {
+        newCart = [
+          ...currentCart,
+          {
+            _id: product._id,
+            title: product.title || product.name,
+            price: product.price,
+            imageUrl: product.imageUrl || product.image,
+            brand: product.brand,
+            quantity,
+          },
+        ];
+        toast.success(`${product.title || product.name} added to cart`);
+      }
+
+      // Sync to server
+      syncCartToServer(newCart);
+      return newCart;
+    });
+  }, [session?.user?.email, syncCartToServer]);
 
   // Remove item from cart
-  const removeFromCart = useCallback((productId) => {
-    const item = cart.find((i) => i._id === productId);
-    if (item) {
-      toast.success(`${item.title} removed from cart`);
-    }
-    const newCart = cart.filter((item) => item._id !== productId);
-    updateCartSnapshot(newCart);
-  }, [cart]);
+  const removeFromCart = useCallback(async (productId) => {
+    setCart((currentCart) => {
+      const item = currentCart.find((i) => i._id === productId);
+      if (item) {
+        toast.success(`${item.title} removed from cart`);
+      }
+      const newCart = currentCart.filter((item) => item._id !== productId);
+      
+      // Sync to server
+      if (session?.user?.email) {
+        syncCartToServer(newCart);
+      }
+      return newCart;
+    });
+  }, [session?.user?.email, syncCartToServer]);
 
   // Update item quantity
-  const updateQuantity = useCallback((productId, quantity) => {
+  const updateQuantity = useCallback(async (productId, quantity) => {
     if (quantity < 1) {
       removeFromCart(productId);
       return;
     }
 
-    const newCart = cart.map((item) =>
-      item._id === productId ? { ...item, quantity } : item
-    );
-    updateCartSnapshot(newCart);
-  }, [cart, removeFromCart]);
+    setCart((currentCart) => {
+      const newCart = currentCart.map((item) =>
+        item._id === productId ? { ...item, quantity } : item
+      );
+      
+      // Sync to server
+      if (session?.user?.email) {
+        syncCartToServer(newCart);
+      }
+      return newCart;
+    });
+  }, [session?.user?.email, removeFromCart, syncCartToServer]);
 
   // Clear entire cart
-  const clearCart = useCallback(() => {
-    updateCartSnapshot([]);
-    toast.success("Cart cleared");
-  }, []);
+  const clearCart = useCallback(async () => {
+    setCart([]);
+    
+    if (session?.user?.email) {
+      try {
+        await fetch(`${API_URL}/api/cart/${encodeURIComponent(session.user.email)}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        console.error("Error clearing cart:", error);
+      }
+    }
+  }, [session?.user?.email]);
 
   // Calculate totals
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
@@ -159,6 +187,7 @@ export function CartProvider({ children }) {
         clearCart,
         isInCart,
         getItemQuantity,
+        isLoading,
       }}
     >
       {children}

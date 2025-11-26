@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Container from "@/components/layout/Container";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,8 @@ import {
   ChevronLeft,
   Lock,
   CheckCircle2,
+  LogIn,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,15 +46,14 @@ const divisions = [
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { cart, cartTotal, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
-
   const [formData, setFormData] = useState({
-    firstName: session?.user?.name?.split(" ")[0] || "",
-    lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
-    email: session?.user?.email || "",
+    firstName: "",
+    lastName: "",
+    email: "",
     phone: "",
     address: "",
     city: "",
@@ -61,6 +63,25 @@ export default function CheckoutPage() {
 
   const shippingCost = cartTotal >= 5000 ? 0 : 100;
   const finalTotal = cartTotal + shippingCost;
+
+  // Update form data when session loads
+  useEffect(() => {
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: session.user.name?.split(" ")[0] || prev.firstName,
+        lastName: session.user.name?.split(" ").slice(1).join(" ") || prev.lastName,
+        email: session.user.email || prev.email,
+      }));
+    }
+  }, [session]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/checkout');
+    }
+  }, [status, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -141,6 +162,56 @@ export default function CheckoutPage() {
       setIsProcessing(false);
     }
   };
+
+  // Show loading state while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="py-8 md:py-12 bg-muted/30">
+        <Container>
+          <Skeleton className="h-10 w-32 mb-6" />
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+            <Skeleton className="h-[500px] w-full" />
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  // Show sign in required message
+  if (!session) {
+    return (
+      <div className="py-16 md:py-24">
+        <Container>
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+              <LogIn className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold mb-4">Sign In to Checkout</h1>
+            <p className="text-muted-foreground mb-8 max-w-md">
+              Please sign in to your account to complete your purchase. Your cart items will be saved.
+            </p>
+            <div className="flex gap-4">
+              <Button size="lg" asChild>
+                <Link href="/login?callbackUrl=/checkout">
+                  Sign In
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/register?callbackUrl=/checkout">
+                  Create Account
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </Container>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (

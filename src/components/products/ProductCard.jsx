@@ -5,13 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Heart, Check } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { ShoppingCart, Check } from "lucide-react";
 import { Rating } from "@smastrom/react-rating";
 import "@smastrom/react-rating/style.css";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 
 export default function ProductCard({ product, viewMode = "grid" }) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const { addToCart, isInCart } = useCart();
   
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
@@ -25,11 +30,17 @@ export default function ProductCard({ product, viewMode = "grid" }) {
   const productCategory = product.subcategory || product.category;
   const productDescription = product.shortDescription || product.description || "";
 
-  const inCart = isInCart(product._id);
+  const inCart = session ? isInCart(product._id) : false;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!session) {
+      toast.error("Please sign in to add items to cart");
+      router.push("/login");
+      return;
+    }
     
     addToCart({
       _id: product._id,
@@ -39,8 +50,6 @@ export default function ProductCard({ product, viewMode = "grid" }) {
       image: productImage,
       category: productCategory,
     });
-    
-    toast.success(`${productName} added to cart!`);
   };
 
   if (viewMode === "list") {
@@ -101,9 +110,7 @@ export default function ProductCard({ product, viewMode = "grid" }) {
             </div>
 
             <div className="flex gap-2">
-              <Button size="icon" variant="outline">
-                <Heart className="h-4 w-4" />
-              </Button>
+              <WishlistButton product={product} />
               <Button 
                 size="sm" 
                 onClick={handleAddToCart}
@@ -151,9 +158,7 @@ export default function ProductCard({ product, viewMode = "grid" }) {
 
         {/* Quick Actions */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="icon" variant="secondary" className="h-8 w-8">
-            <Heart className="h-4 w-4" />
-          </Button>
+          <WishlistButton product={product} />
         </div>
       </Link>
 

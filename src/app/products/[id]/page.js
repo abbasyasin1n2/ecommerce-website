@@ -26,6 +26,7 @@ import { Rating } from "@smastrom/react-rating";
 import "@smastrom/react-rating/style.css";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -73,10 +74,6 @@ export default function ProductDetailPage() {
     }
     
     toast.success(`${quantity} ${productName} added to cart!`);
-  };
-
-  const handleAddToWishlist = () => {
-    toast.success("Added to wishlist!");
   };
 
   const productInCart = product ? isInCart(product._id) : false;
@@ -295,14 +292,7 @@ export default function ProductDetailPage() {
                   </>
                 )}
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleAddToWishlist}
-              >
-                <Heart className="mr-2 h-5 w-5" />
-                Wishlist
-              </Button>
+              <WishlistButton product={product} variant="button" className="flex-none" />
               <Button variant="outline" size="icon">
                 <Share2 className="h-5 w-5" />
               </Button>
