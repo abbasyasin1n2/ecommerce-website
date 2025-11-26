@@ -27,6 +27,7 @@ import "@smastrom/react-rating/style.css";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import ProductReviews from "@/components/reviews/ProductReviews";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -341,7 +342,7 @@ export default function ProductDetailPage() {
                 value="reviews"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
               >
-                Reviews
+                Reviews ({product.reviews || 0})
               </TabsTrigger>
             </TabsList>
 
@@ -396,12 +397,7 @@ export default function ProductDetailPage() {
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  No reviews yet. Be the first to review this product!
-                </p>
-                <Button variant="outline">Write a Review</Button>
-              </div>
+              <ProductReviews productId={product._id} />
             </TabsContent>
           </Tabs>
         </div>
